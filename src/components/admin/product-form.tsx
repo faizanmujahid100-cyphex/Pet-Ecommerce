@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { generateProductDescription } from '@/ai/flows/ai-product-description';
 import type { Product, ProductCategory } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Sparkles, Trash } from 'lucide-react';
+import { Loader2, Sparkles, Trash, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Card,
@@ -41,6 +41,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { CldUploadButton } from 'next-cloudinary';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+
 
 const productCategories: ProductCategory[] = ["food", "toys", "litter", "accessories", "siamese", "persian", "sphynx"];
 
@@ -51,8 +55,8 @@ const productSchema = z.object({
   price: z.coerce.number().positive('Price must be a positive number'),
   stockQuantity: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   keywords: z.string().optional(),
-  mainImageUrl: z.string().url({ message: "Please enter a valid URL." }).or(z.literal('')).optional(),
-  galleryImageUrls: z.array(z.string().url({ message: 'Please enter a valid URL' }).or(z.literal(''))).optional(),
+  mainImageUrl: z.string().url({ message: "Invalid URL" }).optional().or(z.literal('')),
+  galleryImageUrls: z.array(z.string().url({ message: "Invalid URL" })).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -123,16 +127,15 @@ export function ProductForm({ product }: { product: Product | null }) {
 
   async function onSubmit(data: ProductFormData) {
     // Here you would call a server action to save the product to Firestore
-    const submissionData = {
-      ...data,
-      galleryImageUrls: data.galleryImageUrls?.filter((url) => url),
-    };
-    console.log('Form submitted:', submissionData);
+    console.log('Form submitted:', data);
     toast({
       title: 'Product Saved',
       description: `${data.name} has been successfully saved.`,
     });
   }
+
+  const mainImageUrl = form.watch('mainImageUrl');
+  const galleryImageUrls = form.watch('galleryImageUrls');
 
   return (
     <>
@@ -194,67 +197,89 @@ export function ProductForm({ product }: { product: Product | null }) {
                 <CardHeader>
                   <CardTitle>Product Images</CardTitle>
                   <CardDescription>
-                    Provide URLs for the main and gallery images of the product.
+                    Upload a main image and several gallery images for your product.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="mainImageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Main Image URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/image.png"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                <CardContent className="grid gap-6">
+                   <div className="space-y-2">
+                    <FormLabel>Main Image</FormLabel>
+                    {mainImageUrl && (
+                      <div className="relative w-full aspect-video">
+                        <Image
+                          src={mainImageUrl}
+                          alt="Main product image"
+                          fill
+                          className="object-contain rounded-md border"
+                        />
+                      </div>
                     )}
-                  />
-
+                    <CldUploadButton
+                      signatureEndpoint="/api/sign-image"
+                      options={{
+                        sources: ['local', 'camera', 'url'],
+                        multiple: false,
+                      }}
+                      onSuccess={(result: any) => {
+                        if (result.event === 'success' && typeof result.info === 'object' && result.info !== null && 'secure_url' in result.info) {
+                          form.setValue('mainImageUrl', result.info.secure_url, { shouldValidate: true });
+                          toast({ title: 'Main image uploaded' });
+                        }
+                      }}
+                      className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
+                    >
+                      <UploadCloud />
+                      {mainImageUrl ? 'Change Main Image' : 'Upload Main Image'}
+                    </CldUploadButton>
+                    <FormField control={form.control} name="mainImageUrl" render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Input type="hidden" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                  </div>
+                  
                   <div>
                     <FormLabel>Gallery Images</FormLabel>
-                    <div className="space-y-2 mt-2">
+                    <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-4">
                       {fields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-2">
-                          <FormField
-                            control={form.control}
-                            name={`galleryImageUrls.${index}`}
-                            render={({ field }) => (
-                              <FormItem className="flex-grow">
-                                <FormControl>
-                                  <Input
-                                    placeholder="https://example.com/gallery-image.png"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
+                        <div key={field.id} className="relative group aspect-square">
+                          <Image
+                            src={galleryImageUrls?.[index] || ''}
+                            alt={`Gallery image ${index + 1}`}
+                            fill
+                            className="object-cover rounded-md border"
                           />
                           <Button
                             type="button"
                             variant="destructive"
                             size="icon"
                             onClick={() => remove(index)}
+                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => append('')}
+                    <CldUploadButton
+                      signatureEndpoint="/api/sign-image"
+                      options={{
+                        sources: ['local', 'camera', 'url'],
+                        multiple: true,
+                      }}
+                      onSuccess={(result: any) => {
+                        if (result.event === 'success' && typeof result.info === 'object' && result.info !== null && 'secure_url' in result.info) {
+                            append(result.info.secure_url, { shouldFocus: false });
+                            toast({ title: 'Gallery image added' });
+                        }
+                      }}
+                      className={cn(buttonVariants({ variant: 'outline' }), 'mt-2 w-full')}
                     >
-                      Add Gallery Image
-                    </Button>
+                      <UploadCloud />
+                      Add Gallery Images
+                    </CldUploadButton>
                   </div>
                 </CardContent>
               </Card>
