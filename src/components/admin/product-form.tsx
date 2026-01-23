@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { generateProductDescription } from '@/ai/flows/ai-product-description';
@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Card,
@@ -51,6 +51,8 @@ const productSchema = z.object({
   price: z.coerce.number().positive('Price must be a positive number'),
   stockQuantity: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   keywords: z.string().optional(),
+  mainImageUrl: z.string().url({ message: "Please enter a valid URL." }).or(z.literal('')).optional(),
+  galleryImageUrls: z.array(z.string().url({ message: 'Please enter a valid URL' }).or(z.literal(''))).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -69,7 +71,14 @@ export function ProductForm({ product }: { product: Product | null }) {
       price: product?.price || 0,
       stockQuantity: product?.stockQuantity || 0,
       keywords: '',
+      mainImageUrl: product?.mainImageUrl || '',
+      galleryImageUrls: product?.galleryImageUrls || [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "galleryImageUrls",
   });
 
   const handleGenerateDescription = async () => {
@@ -114,7 +123,11 @@ export function ProductForm({ product }: { product: Product | null }) {
 
   async function onSubmit(data: ProductFormData) {
     // Here you would call a server action to save the product to Firestore
-    console.log('Form submitted:', data);
+    const submissionData = {
+      ...data,
+      galleryImageUrls: data.galleryImageUrls?.filter((url) => url),
+    };
+    console.log('Form submitted:', submissionData);
     toast({
       title: 'Product Saved',
       description: `${data.name} has been successfully saved.`,
@@ -177,6 +190,74 @@ export function ProductForm({ product }: { product: Product | null }) {
                   </FormItem>
                 )}
               />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product Images</CardTitle>
+                  <CardDescription>
+                    Provide URLs for the main and gallery images of the product.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="mainImageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Main Image URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/image.png"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div>
+                    <FormLabel>Gallery Images</FormLabel>
+                    <div className="space-y-2 mt-2">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-center gap-2">
+                          <FormField
+                            control={form.control}
+                            name={`galleryImageUrls.${index}`}
+                            render={({ field }) => (
+                              <FormItem className="flex-grow">
+                                <FormControl>
+                                  <Input
+                                    placeholder="https://example.com/gallery-image.png"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => append('')}
+                    >
+                      Add Gallery Image
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div className="space-y-8">
               <Card className="bg-muted/30">
