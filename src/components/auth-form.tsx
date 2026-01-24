@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,8 @@ import {
   handleEmailSignIn,
 } from '@/firebase/auth/auth';
 
+const ADMIN_EMAIL = 'cat840695@gmail.com';
+
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
   password: z
@@ -37,6 +39,7 @@ type AuthFormProps = {
 export function AuthForm({ mode }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,14 +53,26 @@ export function AuthForm({ mode }: AuthFormProps) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
+      const userCredential =
+        mode === 'signup'
+          ? await handleEmailSignUp(values.email, values.password)
+          : await handleEmailSignIn(values.email, values.password);
+
       if (mode === 'signup') {
-        await handleEmailSignUp(values.email, values.password);
-        toast({ title: 'Account created!', description: "You're now logged in." });
+        toast({
+          title: 'Account created!',
+          description: "You're now logged in.",
+        });
       } else {
-        await handleEmailSignIn(values.email, values.password);
-        toast({ title: 'Signed in!', description: "Welcome back." });
+        toast({ title: 'Signed in!', description: 'Welcome back.' });
       }
-      router.push('/account');
+
+      const redirect = searchParams.get('redirect');
+      if (userCredential.user?.email === ADMIN_EMAIL) {
+        router.push('/admin');
+      } else {
+        router.push(redirect || '/account');
+      }
       router.refresh();
     } catch (error: any) {
       toast({
@@ -69,19 +84,26 @@ export function AuthForm({ mode }: AuthFormProps) {
       setIsLoading(false);
     }
   }
-  
+
   async function onGoogleSignIn() {
     setIsLoading(true);
     try {
-      await handleGoogleSignIn();
-      toast({ title: 'Signed in with Google!', description: "Welcome." });
-      router.push('/account');
+      const userCredential = await handleGoogleSignIn();
+      toast({ title: 'Signed in with Google!', description: 'Welcome.' });
+
+      const redirect = searchParams.get('redirect');
+      if (userCredential.user?.email === ADMIN_EMAIL) {
+        router.push('/admin');
+      } else {
+        router.push(redirect || '/account');
+      }
       router.refresh();
     } catch (error: any) {
-       toast({
+      toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
-        description: error.message || 'Could not sign in with Google. Please try again.',
+        description:
+          error.message || 'Could not sign in with Google. Please try again.',
       });
     } finally {
       setIsLoading(false);
