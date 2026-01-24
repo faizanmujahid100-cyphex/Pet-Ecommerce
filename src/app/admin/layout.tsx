@@ -1,6 +1,7 @@
 import {
   PawPrint,
   Package,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
@@ -42,12 +43,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <Package className="h-4 w-4" />
                 Products
               </NavLink>
+               <NavLink href="/admin/settings">
+                <Settings className="h-4 w-4" />
+                Site Settings
+              </NavLink>
             </nav>
           </div>
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6 md:hidden">
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -71,6 +76,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <NavLink href="/admin/products">
                   <Package className="h-5 w-5" />
                   Products
+                </NavLink>
+                 <NavLink href="/admin/settings">
+                  <Settings className="h-5 w-5" />
+                  Site Settings
                 </NavLink>
               </nav>
             </SheetContent>
