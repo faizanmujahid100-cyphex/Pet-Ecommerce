@@ -1,19 +1,33 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
 
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (!cloudName || !apiKey || !apiSecret) {
+  let errorMessage = 'Cloudinary environment variables are not fully configured.';
+  if (!cloudName) errorMessage = 'NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set.';
+  if (!apiKey) errorMessage = 'NEXT_PUBLIC_CLOUDINARY_API_KEY is not set.';
+  if (!apiSecret) errorMessage = 'CLOUDINARY_API_SECRET is not set.';
+  
+  console.error(errorMessage);
+  return NextResponse.json(
+    { error: 'Cloudinary environment variables are not configured correctly.' },
+    { status: 500 }
+  );
+}
+
+cloudinary.config({
+  cloud_name: cloudName,
+  api_key: apiKey,
+  api_secret: apiSecret,
+});
+
+
 export async function POST(request: Request) {
   const body = await request.json();
   const { paramsToSign } = body;
-
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-  if (!apiSecret) {
-    console.error('CLOUDINARY_API_SECRET is not set');
-    return NextResponse.json(
-      { error: 'Cloudinary API secret is not configured.' },
-      { status: 500 }
-    );
-  }
 
   try {
     const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);

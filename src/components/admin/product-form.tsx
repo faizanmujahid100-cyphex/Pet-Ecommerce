@@ -136,6 +136,9 @@ export function ProductForm({ product }: { product: Product | null }) {
 
   const mainImageUrl = form.watch('mainImageUrl');
   const galleryImageUrls = form.watch('galleryImageUrls');
+  
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
 
   return (
     <>
@@ -214,6 +217,8 @@ export function ProductForm({ product }: { product: Product | null }) {
                       </div>
                     )}
                     <CldUploadButton
+                      cloudName={cloudName}
+                      apiKey={apiKey}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
@@ -264,6 +269,8 @@ export function ProductForm({ product }: { product: Product | null }) {
                       ))}
                     </div>
                     <CldUploadButton
+                      cloudName={cloudName}
+                      apiKey={apiKey}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
