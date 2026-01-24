@@ -15,11 +15,100 @@
           "description": "The user's email address."
         }
       },
-      "required": ["displayName", "email"]
+      "required": [
+        "displayName",
+        "email"
+      ]
+    },
+    "product": {
+      "title": "Product",
+      "description": "Represents a product in the store, which can be a cat or a pet product.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "cat",
+            "pet_product"
+          ],
+          "description": "The type of product."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "food",
+            "toys",
+            "litter",
+            "accessories",
+            "siamese",
+            "persian",
+            "sphynx"
+          ],
+          "description": "The category of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the product."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the price (e.g., USD)."
+        },
+        "stockQuantity": {
+          "type": "integer",
+          "description": "The quantity of the product in stock."
+        },
+        "mainImageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the main product image."
+        },
+        "galleryImageUrls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "A list of URLs for gallery images."
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Whether the product is featured on the homepage."
+        },
+        "ratingAverage": {
+          "type": "number",
+          "description": "The average rating of the product."
+        },
+        "ratingCount": {
+          "type": "integer",
+          "description": "The number of ratings the product has received."
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "category",
+        "description",
+        "price",
+        "currency",
+        "stockQuantity",
+        "mainImageUrl"
+      ]
     }
   },
   "auth": {
-    "providers": ["google.com", "password"]
+    "providers": [
+      "google.com",
+      "password"
+    ]
   },
   "firestore": {
     "/users/{userId}": {
@@ -27,6 +116,12 @@
         "$ref": "#/entities/userProfile"
       },
       "description": "Stores public user profile data."
+    },
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/product"
+      },
+      "description": "Stores all product data for the e-commerce store."
     }
   }
 }

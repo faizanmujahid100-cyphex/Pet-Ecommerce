@@ -44,6 +44,9 @@ import {
 import { CldUploadButton } from 'next-cloudinary';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useFirestore } from '@/firebase/provider';
+import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 
 const productCategories: ProductCategory[] = ["food", "toys", "litter", "accessories", "siamese", "persian", "sphynx"];
@@ -55,7 +58,7 @@ const productSchema = z.object({
   price: z.coerce.number().positive('Price must be a positive number'),
   stockQuantity: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   keywords: z.string().optional(),
-  mainImageUrl: z.string().url({ message: "Invalid URL" }).optional().or(z.literal('')),
+  mainImageUrl: z.string().min(1, 'Main image is required').url({ message: "Invalid URL" }),
   galleryImageUrls: z.array(z.string().url({ message: "Invalid URL" })).optional(),
 });
 
@@ -65,6 +68,8 @@ export function ProductForm({ product }: { product: Product | null }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const firestore = useFirestore();
+  const router = useRouter();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -126,19 +131,62 @@ export function ProductForm({ product }: { product: Product | null }) {
   };
 
   async function onSubmit(data: ProductFormData) {
-    // Here you would call a server action to save the product to Firestore
-    console.log('Form submitted:', data);
-    toast({
-      title: 'Product Saved',
-      description: `${data.name} has been successfully saved.`,
-    });
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Firestore is not available.',
+      });
+      return;
+    }
+
+    try {
+      if (product) {
+        // Update existing product
+        const productRef = doc(firestore, 'products', product.id);
+        await setDoc(productRef, {
+          ...data,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        toast({
+          title: 'Product Updated',
+          description: `${data.name} has been successfully updated.`,
+        });
+        router.refresh();
+      } else {
+        // Create new product
+        const collectionRef = collection(firestore, 'products');
+        const newProduct = {
+          ...data,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          type: ['siamese', 'persian', 'sphynx'].includes(data.category) ? 'cat' : 'pet_product',
+          currency: 'USD',
+          isFeatured: false,
+          ratingAverage: 0,
+          ratingCount: 0,
+        };
+        await addDoc(collectionRef, newProduct);
+        toast({
+          title: 'Product Created',
+          description: `${data.name} has been successfully created.`,
+        });
+        router.push('/admin/products');
+      }
+    } catch (error: any) {
+      console.error('Error saving product:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: error.message || 'Could not save the product. Please try again.',
+      });
+    }
   }
 
+
   const mainImageUrl = form.watch('mainImageUrl');
-  const galleryImageUrls = form.watch('galleryImageUrls');
   
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
 
   return (
     <>
@@ -218,7 +266,6 @@ export function ProductForm({ product }: { product: Product | null }) {
                     )}
                     <CldUploadButton
                       cloudName={cloudName}
-                      apiKey={apiKey}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
@@ -232,7 +279,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       }}
                       className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
                     >
-                      <UploadCloud />
+                      <UploadCloud className="mr-2"/>
                       {mainImageUrl ? 'Change Main Image' : 'Upload Main Image'}
                     </CldUploadButton>
                     <FormField control={form.control} name="mainImageUrl" render={({ field }) => (
@@ -251,7 +298,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       {fields.map((field, index) => (
                         <div key={field.id} className="relative group aspect-square">
                           <Image
-                            src={galleryImageUrls?.[index] || ''}
+                            src={field.value || ''}
                             alt={`Gallery image ${index + 1}`}
                             fill
                             className="object-cover rounded-md border"
@@ -270,7 +317,6 @@ export function ProductForm({ product }: { product: Product | null }) {
                     </div>
                     <CldUploadButton
                       cloudName={cloudName}
-                      apiKey={apiKey}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
@@ -278,13 +324,13 @@ export function ProductForm({ product }: { product: Product | null }) {
                       }}
                       onSuccess={(result: any) => {
                         if (result.event === 'success' && typeof result.info === 'object' && result.info !== null && 'secure_url' in result.info) {
-                            append(result.info.secure_url, { shouldFocus: false });
+                            append({value: result.info.secure_url}, { shouldFocus: false });
                             toast({ title: 'Gallery image added' });
                         }
                       }}
                       className={cn(buttonVariants({ variant: 'outline' }), 'mt-2 w-full')}
                     >
-                      <UploadCloud />
+                      <UploadCloud className="mr-2"/>
                       Add Gallery Images
                     </CldUploadButton>
                   </div>
@@ -379,7 +425,10 @@ export function ProductForm({ product }: { product: Product | null }) {
               </div>
             </div>
           </div>
-          <Button type="submit">Save Product</Button>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+           {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Product
+          </Button>
         </form>
       </Form>
       <Dialog open={!!aiSuggestion} onOpenChange={() => setAiSuggestion(null)}>

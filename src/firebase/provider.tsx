@@ -46,3 +46,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 }
 
 export const useFirebase = () => useContext(FirebaseContext);
+export const useFirebaseApp = () => useContext(FirebaseContext).app;
+export const useFirestore = () => useContext(FirebaseContext).firestore;
+export const useAuth = () => useContext(FirebaseContext).auth;

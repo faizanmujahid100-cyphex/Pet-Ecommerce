@@ -4,7 +4,15 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 
 import { firebaseConfig } from './config';
 import { useUser } from './auth/use-user';
-import { FirebaseProvider } from './provider';
+import { useCollection } from './firestore/use-collection';
+import { useDoc } from './firestore/use-doc';
+import {
+  FirebaseProvider,
+  useFirebase,
+  useFirebaseApp,
+  useFirestore,
+  useAuth,
+} from './provider';
 
 interface FirebaseInstances {
   app: FirebaseApp;
@@ -27,4 +35,14 @@ function initializeFirebase(): FirebaseInstances {
   return { app, auth, firestore };
 }
 
-export { initializeFirebase, FirebaseProvider, useUser };
+export {
+  initializeFirebase,
+  FirebaseProvider,
+  useUser,
+  useCollection,
+  useDoc,
+  useFirebase,
+  useFirebaseApp,
+  useFirestore,
+  useAuth,
+};

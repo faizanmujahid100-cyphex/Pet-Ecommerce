@@ -1,45 +1,60 @@
+'use client';
+
 import { ProductForm } from '@/components/admin/product-form';
 import type { Product } from '@/lib/types';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { doc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase/provider';
+import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock function to get product data. In real app, this would be a Firestore call.
-async function getProduct(id: string): Promise<Product | null> {
-  if (id === 'new') {
-    return null;
-  }
-
-  const mockProduct: Product = {
-    id: id,
-    name: 'Fluffy Persian Cat',
-    description:
-      'A very fluffy and adorable Persian cat, great with families and other pets. Loves to cuddle and play with feather toys. Comes with all initial vaccinations.',
-    category: 'persian',
-    price: 1200,
-    stockQuantity: 5,
-    mainImageUrl:
-      PlaceHolderImages.find((p) => p.id === 'persian-cat-1')?.imageUrl || '',
-    galleryImageUrls: [],
-    currency: 'USD',
-    isFeatured: true,
-    ratingAverage: 4.8,
-    ratingCount: 25,
-    type: 'cat',
-    // In a real app these would be Firestore Timestamps
-    createdAt: new Date() as any,
-    updatedAt: new Date() as any,
-  };
-
-  if (id === 'prod1') return mockProduct;
-  return null;
-}
-
-export default async function ProductEditPage({
+export default function ProductEditPage({
   params,
 }: {
   params: { productId: string };
 }) {
-  const product = await getProduct(params.productId);
+  const firestore = useFirestore();
+
+  const isNew = params.productId === 'new';
+
+  const productRef = useMemo(() => {
+    if (!firestore || isNew) return null;
+    return doc(firestore, 'products', params.productId);
+  }, [firestore, params.productId, isNew]);
+
+  const { data: product, loading } = useDoc<Product>(productRef);
+
+  if (loading && !isNew) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-8 w-64" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!product && !isNew) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Product Not Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The product you are looking for does not exist.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const pageTitle = product
     ? `Edit Product: ${product.name}`
     : 'Create New Product';
@@ -50,7 +65,7 @@ export default async function ProductEditPage({
         <CardTitle className="font-headline">{pageTitle}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ProductForm product={product} />
+        <ProductForm product={product || null} />
       </CardContent>
     </Card>
   );

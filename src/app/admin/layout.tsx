@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { AdminAuthGuard } from '@/components/admin/admin-auth-guard';
 
 const NavLink = ({
   href,
@@ -91,7 +92,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {/* User dropdown menu */}
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
-          {children}
+          <AdminAuthGuard>{children}</AdminAuthGuard>
         </main>
       </div>
     </div>

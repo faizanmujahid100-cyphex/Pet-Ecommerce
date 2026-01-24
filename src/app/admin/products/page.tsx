@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -6,40 +8,40 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore } from '@/firebase/provider';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Product } from '@/lib/types';
+import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// This is mock data. In a real app, you'd fetch this from Firestore.
-const mockProducts = [
-  {
-    id: 'prod1',
-    name: 'Persian Cat',
-    image: PlaceHolderImages.find((p) => p.id === 'persian-cat-1')?.imageUrl,
-    price: 1200,
-    stock: 5,
-    dataAiHint: 'persian cat',
-  },
-  {
-    id: 'prod2',
-    name: 'Premium Cat Food',
-    image: PlaceHolderImages.find((p) => p.id === 'cat-food-1')?.imageUrl,
-    price: 50,
-    stock: 100,
-    dataAiHint: 'cat food',
-  },
-  {
-    id: 'prod3',
-    name: 'Feather Wand Toy',
-    image: PlaceHolderImages.find((p) => p.id === 'cat-toy-1')?.imageUrl,
-    price: 15,
-    stock: 200,
-    dataAiHint: 'cat toy',
-  },
-];
+function ProductSkeleton() {
+    return (
+        <Card className="overflow-hidden">
+            <CardHeader className="p-0">
+                <Skeleton className="w-full h-48" />
+            </CardHeader>
+            <CardContent className="p-4">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+        </Card>
+    )
+}
 
 export default function ProductsPage() {
+  const firestore = useFirestore();
+
+  const productsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'), orderBy('name', 'asc'));
+  }, [firestore]);
+
+  const { data: products, loading } = useCollection<Product>(productsQuery);
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -52,19 +54,26 @@ export default function ProductsPage() {
       </div>
 
       <div className="grid gap-6 mt-6 md:grid-cols-2 lg:grid-cols-3">
-        {mockProducts.map((product) => (
+        {loading && (
+          <>
+            <ProductSkeleton />
+            <ProductSkeleton />
+            <ProductSkeleton />
+          </>
+        )}
+        {!loading && products && products.map((product) => (
           <Link href={`/admin/products/${product.id}`} key={product.id}>
             <Card className="overflow-hidden transition-all hover:shadow-lg h-full flex flex-col">
               <CardHeader className="p-0">
                 <Image
                   src={
-                    product.image || 'https://picsum.photos/seed/placeholder/600/400'
+                    product.mainImageUrl || 'https://picsum.photos/seed/placeholder/600/400'
                   }
                   alt={product.name}
                   width={600}
                   height={400}
                   className="object-cover w-full h-48"
-                  data-ai-hint={product.dataAiHint}
+                  data-ai-hint={product.name}
                 />
               </CardHeader>
               <CardContent className="p-4 flex-grow">
@@ -72,13 +81,19 @@ export default function ProductsPage() {
                   {product.name}
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  ${product.price} • {product.stock} in stock
+                  ${product.price} • {product.stockQuantity} in stock
                 </CardDescription>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
+      {!loading && (!products || products.length === 0) && (
+        <div className="text-center py-12">
+            <h2 className="text-xl font-semibold">No products yet</h2>
+            <p className="text-muted-foreground mt-2">Click "Add Product" to create your first one.</p>
+        </div>
+      )}
     </div>
   );
 }
