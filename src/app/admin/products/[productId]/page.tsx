@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
-import { useMemo } from 'react';
+import { useMemo, use } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductEditPage({
@@ -14,14 +14,15 @@ export default function ProductEditPage({
 }: {
   params: { productId: string };
 }) {
+  const resolvedParams = use(params);
   const firestore = useFirestore();
 
-  const isNew = params.productId === 'new';
+  const isNew = resolvedParams.productId === 'new';
 
   const productRef = useMemo(() => {
     if (!firestore || isNew) return null;
-    return doc(firestore, 'products', params.productId);
-  }, [firestore, params.productId, isNew]);
+    return doc(firestore, 'products', resolvedParams.productId);
+  }, [firestore, resolvedParams.productId, isNew]);
 
   const { data: product, loading } = useDoc<Product>(productRef);
 
