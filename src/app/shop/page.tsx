@@ -3,7 +3,7 @@
 import { ProductCard } from '@/components/product-card';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase/provider';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,12 +26,17 @@ export default function ShopPage() {
   const productsQuery = useMemo(() => {
     if (!firestore) return null;
     // The query now filters for listed products.
-    // This may require a composite index in Firestore. If you see an error in the
-    // browser console, it will include a link to create the necessary index.
-    return query(collection(firestore, 'products'), where('isListed', '==', true), orderBy('name', 'asc'));
+    // Sorting is handled on the client to avoid needing a composite index.
+    return query(collection(firestore, 'products'), where('isListed', '==', true));
   }, [firestore]);
 
   const { data: products, loading } = useCollection<Product>(productsQuery);
+
+  const sortedProducts = useMemo(() => {
+    if (!products) return null;
+    // Sort products alphabetically by name on the client
+    return [...products].sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
 
   return (
     <div className="container py-12">
@@ -49,11 +54,11 @@ export default function ShopPage() {
                 <ProductCardSkeleton />
             </>
         )}
-        {products && products.map((product) => (
+        {sortedProducts && sortedProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
-      {!loading && (!products || products.length === 0) && (
+      {!loading && (!sortedProducts || sortedProducts.length === 0) && (
         <div className="col-span-full text-center py-12">
             <h2 className="text-xl font-semibold">No products found</h2>
             <p className="text-muted-foreground mt-2">Check back later or try adding some in the admin panel.</p>
