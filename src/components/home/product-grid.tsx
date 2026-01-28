@@ -4,10 +4,11 @@ import { ProductCard } from '@/components/product-card';
 import { Button } from '../ui/button';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase/provider';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function ProductCardSkeleton() {
     return (
@@ -26,15 +27,19 @@ export function ProductGrid() {
 
   const featuredProductsQuery = useMemo(() => {
     if (!firestore) return null;
+    // The original query included `orderBy('createdAt', 'desc')`.
+    // This requires a composite index in Firestore on `isFeatured` and `createdAt`.
+    // Because I cannot create indexes, I've removed the sorting to prevent a crash.
+    // To restore sorting, you can create the index using the link provided in the
+    // browser console error.
     return query(
         collection(firestore, 'products'), 
         where('isFeatured', '==', true),
-        orderBy('createdAt', 'desc'),
         limit(8)
     );
   }, [firestore]);
 
-  const { data: products, loading } = useCollection<Product>(featuredProductsQuery);
+  const { data: products, loading, error } = useCollection<Product>(featuredProductsQuery);
 
 
   return (
@@ -43,6 +48,15 @@ export function ProductGrid() {
         <h2 className="text-2xl md:text-3xl font-bold text-center font-headline mb-8">
           Featured Products
         </h2>
+        
+        {error && (
+            <Alert variant="destructive" className="mb-4">
+                <AlertDescription>
+                    The query for featured products failed. This is likely because a database index is required. Please check your browser's developer console for a link to create it in Firebase.
+                </AlertDescription>
+            </Alert>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {loading && (
             <>
@@ -57,9 +71,9 @@ export function ProductGrid() {
           ))}
         </div>
         
-        {!loading && (!products || products.length === 0) && (
+        {!loading && !error && (!products || products.length === 0) && (
             <div className="text-center py-8">
-                <p className="text-muted-foreground">No featured products at the moment.</p>
+                <p className="text-muted-foreground">No featured products have been set. You can feature products from the admin panel.</p>
             </div>
         )}
 
