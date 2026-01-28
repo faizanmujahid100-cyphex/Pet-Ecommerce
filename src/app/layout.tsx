@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseProvider } from '@/firebase/provider';
 import Header from '@/components/header';
 import { Analytics } from '@vercel/analytics/react';
+import { CartProvider } from '@/context/cart-context';
 
 export const metadata: Metadata = {
   title: 'Feline & Friend',
@@ -31,9 +32,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col">
         <FirebaseProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Toaster />
+          <CartProvider>
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Toaster />
+          </CartProvider>
         </FirebaseProvider>
         <Analytics />
       </body>

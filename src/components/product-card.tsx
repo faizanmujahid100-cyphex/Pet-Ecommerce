@@ -11,9 +11,12 @@ import {
 import { Button } from './ui/button';
 import { ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/types';
+import { useCart } from '@/context/cart-context';
 
 
 export function ProductCard({ product }: { product: Product }) {
+  const { addToCart } = useCart();
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-lg h-full flex flex-col group">
       <Link href={`/shop/${product.id}`} className="flex flex-col h-full">
@@ -39,10 +42,12 @@ export function ProductCard({ product }: { product: Product }) {
             className="w-full"
             onClick={(e) => {
               e.preventDefault();
-              console.log(`Added ${product.name} to cart`);
+              addToCart(product);
             }}
+            disabled={product.stockQuantity === 0}
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
           </Button>
         </CardFooter>
       </Link>

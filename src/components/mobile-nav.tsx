@@ -3,13 +3,15 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, PawPrint } from 'lucide-react';
+import { Menu, PawPrint, ShoppingCart } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useUser } from '@/firebase';
 import { handleSignOut } from '@/firebase/auth/auth';
+import { useCart } from '@/context/cart-context';
+import { Badge } from './ui/badge';
 
 const navLinks = [{ href: '/shop', label: 'Shop' }];
 
@@ -17,13 +19,23 @@ export function MobileNav() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
   const { user, loading } = useUser();
+  const { cartCount } = useCart();
 
   React.useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
   return (
-    <div className="md:hidden">
+    <div className="flex items-center gap-2 md:hidden">
+      <Button asChild variant="ghost" size="icon" className="relative">
+          <Link href="/cart">
+              <ShoppingCart className="h-6 w-6"/>
+              {cartCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">{cartCount}</Badge>
+              )}
+              <span className="sr-only">Cart</span>
+          </Link>
+      </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon">
