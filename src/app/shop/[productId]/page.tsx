@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo } from 'react';
+import { useMemo, use } from 'react';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useFirestore } from '@/firebase/provider';
@@ -45,13 +45,14 @@ function ProductPageSkeleton() {
 }
 
 export default function ProductPage({ params }: { params: { productId: string } }) {
+  const resolvedParams = use(params);
   const firestore = useFirestore();
   const { addToCart } = useCart();
 
   const productRef = useMemo(() => {
     if (!firestore) return null;
-    return doc(firestore, 'products', params.productId);
-  }, [firestore, params.productId]);
+    return doc(firestore, 'products', resolvedParams.productId);
+  }, [firestore, resolvedParams.productId]);
 
   const { data: product, loading, error } = useDoc<Product>(productRef);
 
