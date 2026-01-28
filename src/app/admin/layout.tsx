@@ -1,4 +1,5 @@
 import {
+  Home,
   PawPrint,
   Package,
   Settings,
@@ -41,6 +42,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              <NavLink href="/admin/dashboard">
+                <Home className="h-4 w-4" />
+                Dashboard
+              </NavLink>
               <NavLink href="/admin/products">
                 <Package className="h-4 w-4" />
                 Products
@@ -79,6 +84,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   <PawPrint className="h-6 w-6 text-primary" />
                   <span className="sr-only">Feline & Friend</span>
                 </Link>
+                <NavLink href="/admin/dashboard">
+                  <Home className="h-5 w-5" />
+                  Dashboard
+                </NavLink>
                 <NavLink href="/admin/products">
                   <Package className="h-5 w-5" />
                   Products
