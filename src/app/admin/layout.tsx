@@ -2,6 +2,7 @@ import {
   PawPrint,
   Package,
   Settings,
+  ShoppingCart,
 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
@@ -44,6 +45,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <Package className="h-4 w-4" />
                 Products
               </NavLink>
+              <NavLink href="/admin/orders">
+                <ShoppingCart className="h-4 w-4" />
+                Orders
+              </NavLink>
                <NavLink href="/admin/settings">
                 <Settings className="h-4 w-4" />
                 Site Settings
@@ -77,6 +82,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <NavLink href="/admin/products">
                   <Package className="h-5 w-5" />
                   Products
+                </NavLink>
+                <NavLink href="/admin/orders">
+                  <ShoppingCart className="h-5 w-5" />
+                  Orders
                 </NavLink>
                  <NavLink href="/admin/settings">
                   <Settings className="h-5 w-5" />
