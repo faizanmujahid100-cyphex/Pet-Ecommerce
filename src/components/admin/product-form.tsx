@@ -189,8 +189,6 @@ export function ProductForm({ product }: { product: Product | null }) {
 
   const mainImageUrl = form.watch('mainImageUrl');
   
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
   return (
     <>
       <Form {...form}>
@@ -268,7 +266,6 @@ export function ProductForm({ product }: { product: Product | null }) {
                       </div>
                     )}
                     <CldUploadButton
-                      cloudName={cloudName}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
@@ -319,7 +316,6 @@ export function ProductForm({ product }: { product: Product | null }) {
                       ))}
                     </div>
                     <CldUploadButton
-                      cloudName={cloudName}
                       signatureEndpoint="/api/sign-image"
                       options={{
                         sources: ['local', 'camera', 'url'],
