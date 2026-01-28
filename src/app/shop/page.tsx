@@ -1,60 +1,61 @@
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ProductCard } from '@/components/product-card';
+'use client';
 
-// This is mock data. In a real app, you'd fetch this from Firestore.
-const mockProducts = [
-  {
-    id: 'prod1',
-    name: 'Persian Cat',
-    image: PlaceHolderImages.find((p) => p.id === 'persian-cat-1')?.imageUrl,
-    price: 1200,
-    dataAiHint: 'persian cat',
-  },
-  {
-    id: 'prod2',
-    name: 'Premium Cat Food',
-    image: PlaceHolderImages.find((p) => p.id === 'cat-food-1')?.imageUrl,
-    price: 50,
-    dataAiHint: 'cat food',
-  },
-  {
-    id: 'prod3',
-    name: 'Feather Wand Toy',
-    image: PlaceHolderImages.find((p) => p.id === 'cat-toy-1')?.imageUrl,
-    price: 15,
-    dataAiHint: 'cat toy',
-  },
-  {
-    id: 'prod4',
-    name: 'Siamese Cat',
-    image: PlaceHolderImages.find((p) => p.id === 'siamese-cat-1')?.imageUrl,
-    price: 1000,
-    dataAiHint: 'siamese cat',
-  },
-    {
-    id: 'prod5',
-    name: 'Enclosed Litter Box',
-    image: PlaceHolderImages.find((p) => p.id === 'litter-box-1')?.imageUrl,
-    price: 75,
-    dataAiHint: 'litter box',
-  },
-];
+import { ProductCard } from '@/components/product-card';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore } from '@/firebase/provider';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Product } from '@/lib/types';
+import { useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function ProductCardSkeleton() {
+    return (
+        <div className="flex flex-col space-y-3">
+            <Skeleton className="aspect-square w-full rounded-xl" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </div>
+        </div>
+    )
+}
 
 export default function ShopPage() {
+  const firestore = useFirestore();
+
+  const productsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'), orderBy('name', 'asc'));
+  }, [firestore]);
+
+  const { data: products, loading } = useCollection<Product>(productsQuery);
+
   return (
     <div className="container py-12">
       <h1 className="text-3xl font-bold font-headline mb-8">Shop All Products</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {mockProducts.map((product) => (
+        {loading && (
+            <>
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+                <ProductCardSkeleton />
+            </>
+        )}
+        {products && products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
-         {mockProducts.map((product) => (
-          <ProductCard key={product.id + '2'} product={{...product, id: product.id + '2'}} />
-        ))}
-         {mockProducts.map((product) => (
-          <ProductCard key={product.id + '3'} product={{...product, id: product.id + '3'}} />
-        ))}
       </div>
+      {!loading && (!products || products.length === 0) && (
+        <div className="col-span-full text-center py-12">
+            <h2 className="text-xl font-semibold">No products found</h2>
+            <p className="text-muted-foreground mt-2">Check back later or try adding some in the admin panel.</p>
+        </div>
+      )}
     </div>
   );
 }

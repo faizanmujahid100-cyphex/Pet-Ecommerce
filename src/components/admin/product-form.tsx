@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Sparkles, Trash, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -60,6 +62,7 @@ const productSchema = z.object({
   keywords: z.string().optional(),
   mainImageUrl: z.string().min(1, 'Main image is required').url({ message: "Invalid URL" }),
   galleryImageUrls: z.array(z.string().url({ message: "Invalid URL" })).optional(),
+  isFeatured: z.boolean().default(false),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -82,6 +85,7 @@ export function ProductForm({ product }: { product: Product | null }) {
       keywords: '',
       mainImageUrl: product?.mainImageUrl || '',
       galleryImageUrls: product?.galleryImageUrls || [],
+      isFeatured: product?.isFeatured || false,
     },
   });
 
@@ -162,7 +166,6 @@ export function ProductForm({ product }: { product: Product | null }) {
           updatedAt: serverTimestamp(),
           type: ['siamese', 'persian', 'sphynx'].includes(data.category) ? 'cat' : 'pet_product',
           currency: 'USD',
-          isFeatured: false,
           ratingAverage: 0,
           ratingCount: 0,
         };
@@ -423,6 +426,30 @@ export function ProductForm({ product }: { product: Product | null }) {
                   )}
                 />
               </div>
+
+               <FormField
+                control={form.control}
+                name="isFeatured"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card">
+                        <FormControl>
+                            <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                            <FormLabel>
+                            Feature on homepage
+                            </FormLabel>
+                            <FormDescription>
+                            This product will appear on the main homepage.
+                            </FormDescription>
+                        </div>
+                    </FormItem>
+                )}
+              />
+
             </div>
           </div>
           <Button type="submit" disabled={form.formState.isSubmitting}>

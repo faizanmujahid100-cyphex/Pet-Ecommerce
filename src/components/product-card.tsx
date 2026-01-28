@@ -10,14 +10,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from './ui/button';
 import { ShoppingCart } from 'lucide-react';
+import type { Product } from '@/lib/types';
 
-interface Product {
-  id: string;
-  name: string;
-  image?: string;
-  price: number;
-  dataAiHint?: string;
-}
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -27,12 +21,12 @@ export function ProductCard({ product }: { product: Product }) {
           <div className="aspect-square relative w-full overflow-hidden">
             <Image
               src={
-                product.image || 'https://picsum.photos/seed/placeholder/400/400'
+                product.mainImageUrl || 'https://picsum.photos/seed/placeholder/400/400'
               }
               alt={product.name}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={product.dataAiHint}
+              data-ai-hint={product.name}
             />
           </div>
         </CardHeader>
