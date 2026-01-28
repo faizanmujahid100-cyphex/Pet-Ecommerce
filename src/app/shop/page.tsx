@@ -3,7 +3,7 @@
 import { ProductCard } from '@/components/product-card';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useFirestore } from '@/firebase/provider';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,7 +25,10 @@ export default function ShopPage() {
 
   const productsQuery = useMemo(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'products'), orderBy('name', 'asc'));
+    // The query now filters for listed products.
+    // This may require a composite index in Firestore. If you see an error in the
+    // browser console, it will include a link to create the necessary index.
+    return query(collection(firestore, 'products'), where('isListed', '==', true), orderBy('name', 'asc'));
   }, [firestore]);
 
   const { data: products, loading } = useCollection<Product>(productsQuery);

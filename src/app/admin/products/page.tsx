@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -17,6 +17,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
 function ProductSkeleton() {
     return (
@@ -80,9 +81,16 @@ export default function ProductsPage() {
                 <CardTitle className="text-lg font-semibold">
                   {product.name}
                 </CardTitle>
-                <CardDescription className="mt-2">
-                  PKR {product.price} • {product.stockQuantity} in stock
-                </CardDescription>
+                 <div className="flex justify-between items-center">
+                    <CardDescription className="mt-2">
+                      PKR {product.price} • {product.stockQuantity} in stock
+                    </CardDescription>
+                    {product.isListed !== false ? (
+                        <Badge variant="secondary" className="mt-2">Listed</Badge>
+                    ) : (
+                        <Badge variant="destructive" className="mt-2">Unlisted</Badge>
+                    )}
+                </div>
               </CardContent>
             </Card>
           </Link>

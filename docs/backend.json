@@ -83,6 +83,10 @@
           "type": "boolean",
           "description": "Whether the product is featured on the homepage."
         },
+        "isListed": {
+          "type": "boolean",
+          "description": "Whether the product is listed and visible in the shop."
+        },
         "ratingAverage": {
           "type": "number",
           "description": "The average rating of the product."

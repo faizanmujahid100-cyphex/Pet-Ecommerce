@@ -38,6 +38,7 @@ export interface Product {
   mainImageUrl: string;
   galleryImageUrls: string[];
   isFeatured: boolean;
+  isListed: boolean;
   ratingAverage: number;
   ratingCount: number;
   createdAt: Timestamp;

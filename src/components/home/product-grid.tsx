@@ -27,14 +27,13 @@ export function ProductGrid() {
 
   const featuredProductsQuery = useMemo(() => {
     if (!firestore) return null;
-    // The original query included `orderBy('createdAt', 'desc')`.
-    // This requires a composite index in Firestore on `isFeatured` and `createdAt`.
-    // Because I cannot create indexes, I've removed the sorting to prevent a crash.
-    // To restore sorting, you can create the index using the link provided in the
-    // browser console error.
+    // This query filters for products that are both "featured" and "listed".
+    // This may require a composite index in Firestore. If you see an error in the
+    // browser console, it will include a link to create the necessary index.
     return query(
         collection(firestore, 'products'), 
         where('isFeatured', '==', true),
+        where('isListed', '==', true),
         limit(8)
     );
   }, [firestore]);

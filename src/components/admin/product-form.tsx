@@ -25,7 +25,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Sparkles, Trash, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -47,7 +58,7 @@ import { CldUploadButton } from 'next-cloudinary';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase/provider';
-import { addDoc, collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 
@@ -61,8 +72,9 @@ const productSchema = z.object({
   stockQuantity: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   keywords: z.string().optional(),
   mainImageUrl: z.string().min(1, 'Main image is required').url({ message: "Invalid URL" }),
-  galleryImageUrls: z.array(z.string().url({ message: "Invalid URL" })).optional(),
+  galleryImageUrls: z.array(z.object({ value: z.string().url() })).optional().default([]).transform(arr => arr.map(item => item.value)),
   isFeatured: z.boolean().default(false),
+  isListed: z.boolean().default(true),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -70,6 +82,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 export function ProductForm({ product }: { product: Product | null }) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const firestore = useFirestore();
   const router = useRouter();
@@ -84,8 +97,9 @@ export function ProductForm({ product }: { product: Product | null }) {
       stockQuantity: product?.stockQuantity || 0,
       keywords: '',
       mainImageUrl: product?.mainImageUrl || '',
-      galleryImageUrls: product?.galleryImageUrls || [],
+      galleryImageUrls: product?.galleryImageUrls?.map(url => ({ value: url })) || [],
       isFeatured: product?.isFeatured || false,
+      isListed: product?.isListed ?? true,
     },
   });
 
@@ -131,6 +145,34 @@ export function ProductForm({ product }: { product: Product | null }) {
     if (aiSuggestion) {
       form.setValue('description', aiSuggestion, { shouldValidate: true });
       setAiSuggestion(null);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!product || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Cannot delete a new or invalid product.',
+      });
+      return;
+    }
+    try {
+      const productRef = doc(firestore, 'products', product.id);
+      await deleteDoc(productRef);
+      toast({
+        title: 'Product Deleted',
+        description: `${product.name} has been permanently deleted.`,
+      });
+      router.push('/admin/products');
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error deleting product:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: error.message || 'Could not delete the product.',
+      });
     }
   };
 
@@ -423,35 +465,66 @@ export function ProductForm({ product }: { product: Product | null }) {
                 />
               </div>
 
-               <FormField
-                control={form.control}
-                name="isFeatured"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card">
-                        <FormControl>
-                            <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                            Feature on homepage
-                            </FormLabel>
-                            <FormDescription>
-                            This product will appear on the main homepage.
-                            </FormDescription>
-                        </div>
-                    </FormItem>
-                )}
-              />
-
+               <div className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="isFeatured"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card">
+                            <FormControl>
+                                <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                Feature on homepage
+                                </FormLabel>
+                                <FormDescription>
+                                This product will appear on the main homepage.
+                                </FormDescription>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="isListed"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-card">
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                List Product
+                                </FormLabel>
+                                <FormDescription>
+                                Uncheck to hide this product from the shop.
+                                </FormDescription>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+               </div>
             </div>
           </div>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-           {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Product
+            </Button>
+            {product && (
+                 <Button type="button" variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} disabled={form.formState.isSubmitting}>
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete Product
+                </Button>
+            )}
+          </div>
         </form>
       </Form>
       <Dialog open={!!aiSuggestion} onOpenChange={() => setAiSuggestion(null)}>
@@ -475,6 +548,26 @@ export function ProductForm({ product }: { product: Product | null }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                product from the database.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteProduct}
+                className={buttonVariants({ variant: "destructive" })}
+            >
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
