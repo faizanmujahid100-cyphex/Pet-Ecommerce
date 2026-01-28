@@ -266,7 +266,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       </div>
                     )}
                     <CldUploadButton
-                      signatureEndpoint="/api/sign-image"
+                      uploadPreset="feline_and_friend_preset"
                       options={{
                         sources: ['local', 'camera', 'url'],
                         multiple: false,
@@ -316,7 +316,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       ))}
                     </div>
                     <CldUploadButton
-                      signatureEndpoint="/api/sign-image"
+                      uploadPreset="feline_and_friend_preset"
                       options={{
                         sources: ['local', 'camera', 'url'],
                         multiple: true,
