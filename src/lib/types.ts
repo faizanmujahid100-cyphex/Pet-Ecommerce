@@ -1,5 +1,15 @@
 import type { Timestamp } from 'firebase/firestore';
 
+export interface DeliveryInfo {
+  name: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  postalCode: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -7,14 +17,7 @@ export interface User {
   role: 'admin' | 'customer';
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
-  defaultDeliveryInfo?: {
-    name: string;
-    phone: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    postalCode: string;
-  };
+  defaultDeliveryInfo?: DeliveryInfo;
 }
 
 export type ProductCategory =
@@ -51,41 +54,17 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  mainImageUrl: string;
 }
 
 export interface Order {
   id: string;
-  userId: string;
+  userId: string | null;
   items: OrderItem[];
   totalAmount: number;
   currency: string;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  deliveryInfo: Record<string, any>;
+  deliveryInfo: DeliveryInfo;
   createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export interface Rating {
-  id: string;
-  productId: string;
-  userId: string;
-  ratingValue: number;
-  reviewText?: string;
-  createdAt: Timestamp;
-}
-
-export interface DeliveryFormField {
-  id: string;
-  label: string;
-  type: 'text' | 'number' | 'phone' | 'textarea' | 'select';
-  placeholder?: string;
-  isRequired: boolean;
-  defaultValue?: string;
-  options?: string[];
-}
-
-export interface DeliveryFormSchema {
-  id: 'default';
-  fields: DeliveryFormField[];
   updatedAt: Timestamp;
 }
