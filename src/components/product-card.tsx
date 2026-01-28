@@ -32,7 +32,7 @@ export function ProductCard({ product }: { product: Product }) {
         </CardHeader>
         <CardContent className="p-4 flex-grow">
           <h3 className="text-base font-semibold">{product.name}</h3>
-          <p className="mt-1 text-lg font-bold">${product.price.toFixed(2)}</p>
+          <p className="mt-1 text-lg font-bold">PKR {product.price}</p>
         </CardContent>
         <CardFooter className="p-4 pt-0">
           <Button

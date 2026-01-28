@@ -165,7 +165,7 @@ export function ProductForm({ product }: { product: Product | null }) {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           type: ['siamese', 'persian', 'sphynx'].includes(data.category) ? 'cat' : 'pet_product',
-          currency: 'USD',
+          currency: 'PKR',
           ratingAverage: 0,
           ratingCount: 0,
         };

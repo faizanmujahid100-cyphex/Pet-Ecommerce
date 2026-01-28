@@ -60,7 +60,7 @@
         },
         "currency": {
           "type": "string",
-          "description": "The currency of the price (e.g., USD)."
+          "description": "The currency of the price (e.g., PKR)."
         },
         "stockQuantity": {
           "type": "integer",

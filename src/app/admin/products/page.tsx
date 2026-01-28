@@ -81,7 +81,7 @@ export default function ProductsPage() {
                   {product.name}
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  ${product.price} • {product.stockQuantity} in stock
+                  PKR {product.price} • {product.stockQuantity} in stock
                 </CardDescription>
               </CardContent>
             </Card>
