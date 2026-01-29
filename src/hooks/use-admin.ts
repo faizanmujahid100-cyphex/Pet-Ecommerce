@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 // IMPORTANT: This is not a secure way to implement admin checks.
 // In a production app, you should use Firebase custom claims.
 // This is for demonstration purposes only.
-const ADMIN_EMAIL = 'cat840695@gmail.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export function useAdmin() {
   const { user, loading: userLoading } = useUser();

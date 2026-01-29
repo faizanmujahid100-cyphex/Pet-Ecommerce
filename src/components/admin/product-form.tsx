@@ -308,7 +308,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       </div>
                     )}
                     <CldUploadButton
-                      uploadPreset="productscat"
+                      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
                       options={{
                         sources: ['local', 'camera', 'url'],
                         multiple: false,
@@ -358,7 +358,7 @@ export function ProductForm({ product }: { product: Product | null }) {
                       ))}
                     </div>
                     <CldUploadButton
-                      uploadPreset="productscat"
+                      uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
                       options={{
                         sources: ['local', 'camera', 'url'],
                         multiple: true,

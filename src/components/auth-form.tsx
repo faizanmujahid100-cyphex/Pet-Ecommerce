@@ -23,7 +23,7 @@ import {
   handleEmailSignIn,
 } from '@/firebase/auth/auth';
 
-const ADMIN_EMAIL = 'cat840695@gmail.com';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
