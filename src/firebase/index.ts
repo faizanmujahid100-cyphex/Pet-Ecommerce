@@ -21,6 +21,12 @@ interface FirebaseInstances {
 }
 
 function initializeFirebase(): FirebaseInstances {
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('<your_api_key>')) {
+    throw new Error(
+      'Firebase API Key is missing or is still a placeholder. Please get your Firebase config object and set the environment variables in your .env file.'
+    );
+  }
+  
   if (getApps().length) {
     const app = getApp();
     const auth = getAuth(app);
