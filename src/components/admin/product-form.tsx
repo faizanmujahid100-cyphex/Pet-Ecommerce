@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { generateProductDescription } from '@/ai/flows/ai-product-description';
 import type { Product, ProductCategory } from '@/lib/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Sparkles, Trash, UploadCloud } from 'lucide-react';
+import { Loader2, Trash, UploadCloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Card,
@@ -46,14 +45,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { CldUploadButton } from 'next-cloudinary';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -70,7 +61,6 @@ const productSchema = z.object({
   category: z.enum(productCategories),
   price: z.coerce.number().positive('Price must be a positive number'),
   stockQuantity: z.coerce.number().int().min(0, 'Stock cannot be negative'),
-  keywords: z.string().optional(),
   mainImageUrl: z.string().min(1, 'Main image is required').url({ message: "Invalid URL" }),
   galleryImageUrls: z.array(z.object({ value: z.string().url() })).optional().default([]).transform(arr => arr.map(item => item.value)),
   isFeatured: z.boolean().default(false),
@@ -81,9 +71,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 
 export function ProductForm({ product }: { product: Product | null }) {
   const { toast } = useToast();
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const firestore = useFirestore();
   const router = useRouter();
 
@@ -95,7 +83,6 @@ export function ProductForm({ product }: { product: Product | null }) {
       category: product?.category || 'food',
       price: product?.price || 0,
       stockQuantity: product?.stockQuantity || 0,
-      keywords: '',
       mainImageUrl: product?.mainImageUrl || '',
       galleryImageUrls: product?.galleryImageUrls?.map(url => ({ value: url })) || [],
       isFeatured: product?.isFeatured || false,
@@ -107,46 +94,6 @@ export function ProductForm({ product }: { product: Product | null }) {
     control: form.control,
     name: "galleryImageUrls",
   });
-
-  const handleGenerateDescription = async () => {
-    const { name, description, category, keywords } = form.getValues();
-    if (!name) {
-      toast({
-        variant: 'destructive',
-        title: 'Product name is required',
-        description:
-          'Please enter a product name before generating a description.',
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const result = await generateProductDescription({
-        productName: name,
-        currentDescription: description,
-        category: category,
-        keywords: keywords || '',
-      });
-      setAiSuggestion(result.improvedDescription);
-    } catch (error) {
-      console.error('AI generation failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Generation Failed',
-        description: 'Could not generate a new description. Please try again.',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const applySuggestion = () => {
-    if (aiSuggestion) {
-      form.setValue('description', aiSuggestion, { shouldValidate: true });
-      setAiSuggestion(null);
-    }
-  };
 
   const handleDeleteProduct = async () => {
     if (!product || !firestore) {
@@ -261,20 +208,6 @@ export function ProductForm({ product }: { product: Product | null }) {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Description</FormLabel>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateDescription}
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        Generate with AI
-                      </Button>
                     </div>
                     <FormControl>
                       <Textarea
@@ -379,34 +312,6 @@ export function ProductForm({ product }: { product: Product | null }) {
               </Card>
             </div>
             <div className="space-y-8">
-              <Card className="bg-muted/30">
-                <CardHeader>
-                  <CardTitle>AI Assistant</CardTitle>
-                  <CardDescription>
-                    Generate a compelling product description using AI. Add some
-                    keywords for better results.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="keywords"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Keywords</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., fluffy, playful, pedigree"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
               <FormField
                 control={form.control}
                 name="category"
@@ -527,27 +432,6 @@ export function ProductForm({ product }: { product: Product | null }) {
           </div>
         </form>
       </Form>
-      <Dialog open={!!aiSuggestion} onOpenChange={() => setAiSuggestion(null)}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-headline">
-              <Sparkles className="text-primary" /> AI-Generated Description
-            </DialogTitle>
-            <DialogDescription>
-              Here's a suggestion from our AI. You can edit it after applying.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="my-4 p-4 bg-muted/50 rounded-md border text-sm max-h-[40vh] overflow-y-auto">
-            {aiSuggestion}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setAiSuggestion(null)}>
-              Cancel
-            </Button>
-            <Button onClick={applySuggestion} className="bg-accent hover:bg-accent/90 text-accent-foreground">Use This Description</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
